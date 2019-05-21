@@ -169,3 +169,5 @@ dots_small.txt
 log.txt
 gen
 
+# sublime project files
+*.sublime-*
