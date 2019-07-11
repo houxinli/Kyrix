@@ -1,14 +1,13 @@
 package project;
 
-/**
- * Created by wenbo on 1/4/18.
- */
+/** Created by wenbo on 1/4/18. */
 public class Jump {
 
     private String sourceId, destId;
     private String type;
     private String selector, viewport, predicates, name;
     private String sourceViewId, destViewId;
+    private Boolean noPrefix;
 
     public String getSourceId() {
         return sourceId;
@@ -46,18 +45,43 @@ public class Jump {
         return destViewId;
     }
 
+    public Boolean getNoPrefix() {
+        return noPrefix;
+    }
+
     @Override
     public String toString() {
-        return "Jump{" +
-                "sourceId='" + sourceId + '\'' +
-                ", destId='" + destId + '\'' +
-                ", type='" + type + '\'' +
-                ", selector='" + selector + '\'' +
-                ", viewport='" + viewport + '\'' +
-                ", predicates='" + predicates + '\'' +
-                ", name='" + name + '\'' +
-                ", sourceViewId='" + sourceViewId + '\'' +
-                ", destViewId='" + destViewId + '\'' +
-                '}';
+        return "Jump{"
+                + "sourceId='"
+                + sourceId
+                + '\''
+                + ", destId='"
+                + destId
+                + '\''
+                + ", type='"
+                + type
+                + '\''
+                + ", selector='"
+                + selector
+                + '\''
+                + ", viewport='"
+                + viewport
+                + '\''
+                + ", predicates='"
+                + predicates
+                + '\''
+                + ", name='"
+                + name
+                + '\''
+                + ", sourceViewId='"
+                + sourceViewId
+                + '\''
+                + ", destViewId='"
+                + destViewId
+                + '\''
+                + ", noPrefix='"
+                + noPrefix
+                + '\''
+                + '}';
     }
 }

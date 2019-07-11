@@ -168,14 +168,3 @@ dots.txt
 dots_small.txt
 log.txt
 gen
-
-# sublime project files
-*.sublime-*
-
-# houxinli's personal project files
-hxl
-xinli
-*.sql
-hxl.sh
-sftp-config.json
-helloworld

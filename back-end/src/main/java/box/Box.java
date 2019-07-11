@@ -15,15 +15,15 @@ public class Box {
         return maxx - minx;
     }
 
-    public double getHight() {
+    public double getHeight() {
         return maxy - miny;
     }
 
-    public double getMaxx(){
+    public double getMaxx() {
         return maxx;
     }
 
-    public double getMaxy(){
+    public double getMaxy() {
         return maxy;
     }
 
@@ -33,5 +33,9 @@ public class Box {
 
     public double getMiny() {
         return miny;
+    }
+
+    public String getCSV() {
+        return minx + "," + miny + "," + maxx + "," + maxy;
     }
 }

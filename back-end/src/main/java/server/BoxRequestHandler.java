@@ -7,19 +7,18 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import javax.net.ssl.HttpsURLConnection;
+import main.Config;
+import main.DbConnector;
 import main.Main;
 import project.Canvas;
 import project.View;
 
-import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
-public class BoxRequestHandler  implements HttpHandler {
+public class BoxRequestHandler implements HttpHandler {
 
     // gson builder
     private final Gson gson;
@@ -29,8 +28,8 @@ public class BoxRequestHandler  implements HttpHandler {
 
         gson = new GsonBuilder().create();
         boxGetter = new MikeBoxGetter();
-
     }
+
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
 
@@ -45,7 +44,7 @@ public class BoxRequestHandler  implements HttpHandler {
         BoxandData data = null;
 
         // check if this is a POST request
-        if (! httpExchange.getRequestMethod().equalsIgnoreCase("GET")) {
+        if (!httpExchange.getRequestMethod().equalsIgnoreCase("GET")) {
             Server.sendResponse(httpExchange, HttpsURLConnection.HTTP_BAD_METHOD, "");
             return;
         }
@@ -54,8 +53,7 @@ public class BoxRequestHandler  implements HttpHandler {
         String query = httpExchange.getRequestURI().getQuery();
         Map<String, String> queryMap = Server.queryToMap(query);
         // print
-        for (String s : queryMap.keySet())
-            System.out.println(s + " : " + queryMap.get(s));
+        for (String s : queryMap.keySet()) System.out.println(s + " : " + queryMap.get(s));
 
         // check parameters, if not pass, send a bad request response
         response = checkParameters(queryMap);
@@ -75,12 +73,10 @@ public class BoxRequestHandler  implements HttpHandler {
             e.printStackTrace();
         }
         View v = Main.getProject().getView(viewId);
-        if (queryMap.containsKey("canvasw"))
-            c.setW(Integer.valueOf(queryMap.get("canvasw")));
-        if (queryMap.containsKey("canvash"))
-            c.setH(Integer.valueOf(queryMap.get("canvash")));
+        if (queryMap.containsKey("canvasw")) c.setW(Integer.valueOf(queryMap.get("canvasw")));
+        if (queryMap.containsKey("canvash")) c.setH(Integer.valueOf(queryMap.get("canvash")));
         ArrayList<String> predicates = new ArrayList<>();
-        for (int i = 0; i < c.getLayers().size(); i ++)
+        for (int i = 0; i < c.getLayers().size(); i++)
             predicates.add(queryMap.get("predicate" + i));
         double oMinX = Double.valueOf(queryMap.get("oboxx"));
         double oMinY = Double.valueOf(queryMap.get("oboxy"));
@@ -88,21 +84,33 @@ public class BoxRequestHandler  implements HttpHandler {
         double oMaxY = oMinY + Double.valueOf(queryMap.get("oboxh"));
         Box oldBox = new Box(oMinX, oMinY, oMaxX, oMaxY);
 
-        //get box data
+        // get box data
         long st = System.currentTimeMillis();
         try {
             data = boxGetter.getBox(c, v, minx, miny, oldBox, predicates);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("Fetch data time: " + (System.currentTimeMillis() - st) + "ms.");
+        double fetchTime = System.currentTimeMillis() - st;
+        int intersectingRows = 0;
+        for (int i = 0; i < data.data.size(); i++) {
+            intersectingRows += data.data.get(i).size();
+        }
+        System.out.println("Fetch data time: " + fetchTime + "ms.");
+        System.out.println("number of intersecting rows in result: " + intersectingRows);
+        /* TODO: stats table not created. Also, will an insert query be too much overhead?
+        if (oldBox.getHight()==-100000 && oldBox.getWidth()==-100000) {
+            sendStats("zoom", fetchTime, intersectingRows);
+        } else {
+            sendStats("pan", fetchTime, intersectingRows);
+        }*/
 
-        //send data and box back
+        // send data and box back
         Map<String, Object> respMap = new HashMap<>();
         respMap.put("renderData", BoxandData.getDictionaryFromData(data.data, c));
         respMap.put("minx", data.box.getMinx());
         respMap.put("miny", data.box.getMiny());
-        respMap.put("boxH", data.box.getHight());
+        respMap.put("boxH", data.box.getHeight());
         respMap.put("boxW", data.box.getWidth());
         respMap.put("canvasId", canvasId);
         response = gson.toJson(respMap);
@@ -117,10 +125,8 @@ public class BoxRequestHandler  implements HttpHandler {
     private String checkParameters(Map<String, String> queryMap) {
 
         // check fields
-        if (! queryMap.containsKey("id"))
-            return "canvas id missing.";
-        if (! queryMap.containsKey("x") || ! queryMap.containsKey("y"))
-            return "x or y missing.";
+        if (!queryMap.containsKey("id")) return "canvas id missing.";
+        if (!queryMap.containsKey("x") || !queryMap.containsKey("y")) return "x or y missing.";
 
         String canvasId = queryMap.get("id");
 
@@ -130,5 +136,25 @@ public class BoxRequestHandler  implements HttpHandler {
 
         // check passed
         return "";
+    }
+
+    private void sendStats(String queryType, double seconds, int fetchedRows) {
+        String sql =
+                "insert into stats (querytype, milliseconds, rowsFetched) values ('"
+                        + queryType
+                        + "',"
+                        + seconds
+                        + ","
+                        + fetchedRows
+                        + ");";
+        System.out.println("stats sql: " + sql);
+        System.out.println("database name is: " + Config.databaseName);
+
+        try {
+            DbConnector.executeUpdate(Config.databaseName, sql);
+        } catch (Exception e) {
+            System.out.println("couldn't write stats to the stats table: ");
+            System.out.println(e);
+        }
     }
 }

@@ -5,23 +5,20 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import main.Config;
-import main.DbConnector;
-import main.Main;
-import project.Canvas;
-
-import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedReader;
+import index.Indexer;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import javax.net.ssl.HttpsURLConnection;
+import main.Config;
+import main.DbConnector;
+import main.Main;
+import project.Canvas;
+import project.Layer;
 
-/**
- * Created by wenbo on 1/8/18.
- */
+/** Created by wenbo on 1/8/18. */
 public class CanvasRequestHandler implements HttpHandler {
 
     private final Gson gson;
@@ -37,7 +34,7 @@ public class CanvasRequestHandler implements HttpHandler {
         System.out.println("Serving /canvas");
 
         // check if this is a POST request
-        if (! httpExchange.getRequestMethod().equalsIgnoreCase("GET")) {
+        if (!httpExchange.getRequestMethod().equalsIgnoreCase("GET")) {
             Server.sendResponse(httpExchange, HttpsURLConnection.HTTP_BAD_METHOD, "");
             return;
         }
@@ -57,7 +54,7 @@ public class CanvasRequestHandler implements HttpHandler {
 
         // list of predicates
         ArrayList<String> predicates = new ArrayList<>();
-        for (int i = 0; i < c.getLayers().size(); i ++)
+        for (int i = 0; i < c.getLayers().size(); i++)
             predicates.add(queryMap.get("predicate" + i));
 
         // calculate w or h if they are not pre-determined
@@ -67,7 +64,8 @@ public class CanvasRequestHandler implements HttpHandler {
             String db = c.getDbByLayerId(c.getwLayerId());
             try {
                 c.setW(getWidthOrHeightBySql(sql, db));
-            } catch (Exception e) {}
+            } catch (Exception e) {
+            }
         }
         if (c.gethSql().length() > 0) {
             String predicate = queryMap.get("predicate" + c.gethLayerId());
@@ -75,7 +73,8 @@ public class CanvasRequestHandler implements HttpHandler {
             String db = c.getDbByLayerId(c.gethLayerId());
             try {
                 c.setH(getWidthOrHeightBySql(sql, db));
-            } catch (Exception e) {}
+            } catch (Exception e) {
+            }
         }
 
         // get static data
@@ -96,35 +95,31 @@ public class CanvasRequestHandler implements HttpHandler {
         Server.sendResponse(httpExchange, HttpsURLConnection.HTTP_OK, response);
     }
 
-    private int getWidthOrHeightBySql(String sql, String db) throws SQLException, ClassNotFoundException {
+    private int getWidthOrHeightBySql(String sql, String db)
+            throws SQLException, ClassNotFoundException {
 
         return Integer.valueOf(DbConnector.getQueryResult(db, sql).get(0).get(0));
     }
 
-    private ArrayList<ArrayList<ArrayList<String>>> getStaticData(Canvas c, ArrayList<String> predicates)
-            throws SQLException, ClassNotFoundException {
+    private ArrayList<ArrayList<ArrayList<String>>> getStaticData(
+            Canvas c, ArrayList<String> predicates) throws SQLException, ClassNotFoundException {
 
         // container for data
         ArrayList<ArrayList<ArrayList<String>>> data = new ArrayList<>();
 
         // loop over layers
-        for (int i = 0; i < c.getLayers().size(); i ++) {
+        for (int i = 0; i < c.getLayers().size(); i++) {
+
+            Layer l = c.getLayers().get(i);
 
             // add an empty placeholder for static layers
-            if (! c.getLayers().get(i).isStatic()) {
+            if (!l.isStatic()) {
                 data.add(new ArrayList<>());
                 continue;
             }
 
-            // get column list string
-            String colListStr = c.getLayers().get(i).getTransform().getColStr("");
-
-            // construct range query
-            String sql = "select " + colListStr + " from bbox_" + Config.projectName + "_"
-                    + c.getId() + "layer" + i;
-            if (predicates.get(i).length() > 0)
-                sql += " where " + predicates.get(i);
-            sql += ";";
+            Indexer indexer = l.getIndexer();
+            String sql = indexer.getStaticDataQuery(c, i, predicates.get(i));
 
             // run query, add to response
             data.add(DbConnector.getQueryResult(Config.databaseName, sql));

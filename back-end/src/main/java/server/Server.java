@@ -3,18 +3,16 @@ package server;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import index.Indexer;
-import main.Config;
-import main.Main;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
+import javax.net.ssl.HttpsURLConnection;
+import main.Config;
+import main.Main;
 
-/**
- * Created by wenbo on 1/8/18.
- */
+/** Created by wenbo on 1/8/18. */
 public class Server {
 
     private static HttpServer server;
@@ -31,13 +29,14 @@ public class Server {
         server.createContext("/canvas", new CanvasRequestHandler());
         server.createContext("/viewport", new ViewportRequestHandler());
         server.createContext("/project", new ProjectRequestHandler());
-        server.setExecutor(null);//java.util.concurrent.Executors.newFixedThreadPool(Config.numThread));
+        server.setExecutor(
+                null); // java.util.concurrent.Executors.newFixedThreadPool(Config.numThread));
         terminated = false;
         server.start();
         System.out.println("Backend server started...");
+        if (Main.getProject() == null) System.out.println("Waiting for project definition...");
         synchronized (terminationLock) {
-            while (!terminated)
-                terminationLock.wait();
+            while (!terminated) terminationLock.wait();
         }
         Server.stopServer();
         Indexer.precompute();
@@ -56,12 +55,13 @@ public class Server {
 
     public static void stopServer() {
 
-        if (server != null)
-            server.stop(0);
+        if (server != null) server.stop(0);
         server = null;
     }
 
-    public static void sendResponse(HttpExchange httpExchange, int responseCode, byte[] response, int len) throws IOException {
+    public static void sendResponse(
+            HttpExchange httpExchange, int responseCode, byte[] response, int len)
+            throws IOException {
 
         // write response
         httpExchange.sendResponseHeaders(responseCode, len);
@@ -72,7 +72,13 @@ public class Server {
     }
 
     // send response with additional contentType information
-    public static void sendResponse(HttpExchange httpExchange, int responseCode, byte[] response, int len, String contentType) throws IOException {
+    public static void sendResponse(
+            HttpExchange httpExchange,
+            int responseCode,
+            byte[] response,
+            int len,
+            String contentType)
+            throws IOException {
 
         // add content type to response header
         httpExchange.getResponseHeaders().add("Content-Type", contentType);
@@ -80,8 +86,19 @@ public class Server {
     }
 
     // send response using string
-    public static void sendResponse(HttpExchange httpExchange, int responseCode, String response) throws IOException {
+    public static void sendResponse(HttpExchange httpExchange, int responseCode, String response)
+            throws IOException {
 
+        // https://stackoverflow.com/questions/35313180/cors-with-com-sun-net-httpserver
+        httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        if (httpExchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+            httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, OPTIONS");
+            httpExchange
+                    .getResponseHeaders()
+                    .add("Access-Control-Allow-Headers", "Content-Type,Authorization");
+            httpExchange.sendResponseHeaders(HttpsURLConnection.HTTP_NO_CONTENT, -1);
+            return;
+        }
         sendResponse(httpExchange, responseCode, response.getBytes(), response.getBytes().length);
     }
 
@@ -90,8 +107,7 @@ public class Server {
 
         Map<String, String> result = new HashMap<>();
         // check if query is null
-        if (query == null)
-            return result;
+        if (query == null) return result;
         for (String param : query.split("&")) {
             int pos = param.indexOf("=");
             result.put(param.substring(0, pos), param.substring(pos + 1));
