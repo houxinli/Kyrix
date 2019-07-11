@@ -457,6 +457,10 @@ function registerJumps(viewId, svg, layerId) {
                     optionText = "<b>LOAD " + jumps[k].destViewId + " VIEW with </b>";
                 else if (jumps[k].type == param.highlight)
                     optionText = "<b>HIGHLIGHT in " + jumps[k].destViewId + " VIEW </b>";
+                // issue 67
+                if (jumps[k].noPrefix == "true"){
+                    optionText = "";
+                }
                 optionText += jumps[k].name.parseFunction() == null ? jumps[k].name
                     : jumps[k].name.parseFunction()(d, optionalArgs);
                 var jumpOption = d3.select(viewClass + "#popovercontent")

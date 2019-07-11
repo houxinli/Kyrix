@@ -35,6 +35,8 @@ function Jump(sourceCanvas, destCanvas, type, optional) {
     this.name = ("name" in optional ? optional.name : destCanvas.id);
     this.sourceViewId = ("sourceView" in optional ? optional.sourceView.id : "");
     this.destViewId = ("destView" in optional ? optional.destView.id : "");
+    // to fix issue 67
+    this.noPrefix = "noPrefix" in optional ? optional.noPrefix : "";
 };
 
 // exports

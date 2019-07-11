@@ -15,9 +15,9 @@ please see [Server.java](/back-end/src/main/java/server/Server.java#L22)
 
 * **Success Response:**
 
-  * **Code:** 200 <br />
+  * **Code:** 200 <br/>
     **Content:** a JSON object containing the following fields:
-    
+
     |Name|Description|
     |:---:|:---:|
     |`initialViewportX`|The `x` coordinate of the viewport. |
@@ -26,8 +26,9 @@ please see [Server.java](/back-end/src/main/java/server/Server.java#L22)
     |`viewportHeight`|The height of the viewport (in pixel). This is fixed for the entire project.|
     |`initialCanvasId`|The id of the first canvas. |
     |`initialPredicate`|The predicate that is supplied to the query of the first canvas. |
- 
+
 * **Error Response:**
+
   * **Code:** 405 BAD METHOD <br />
 
 * **Sample Call:**
@@ -74,14 +75,13 @@ please see [Server.java](/back-end/src/main/java/server/Server.java#L22)
     |`seperable`|True/False - whether the calculation of `placement` is per-tuple or not.|
     
      The `jump` field is an array containing definitions of jumps starting from the requested canvas. Each jump contains the following fields (corresponding to those defined in the spec API):
-   
+
     |Name|Description|
     |:---:|:---:|
     |`sourceId`|The id of the source canvas. This equals the id of the requested canvas. |
     |`destId`|The id of the destination canvas. |
     |`newViewport`|A Javascript function calculating the new viewport after jump. This function will either calculate a constant viewport, or a viewport centered at one tuple. See spec API for details on input/output of this function.|
 
-   
 * **Error Response:**
   * **Code:** 405 BAD METHOD <br />
   
@@ -118,7 +118,7 @@ please see [Server.java](/back-end/src/main/java/server/Server.java#L22)
 
   * **Code:** 200 <br />
     **Content:** a JSON object containing two fields `cx` and `cy` representing the viewport center after jump, which is the centroid of the tuple filtered by `predicate`. 
-    
+  
 * **Error Response:**
   * **Code:** 405 BAD METHOD <br />
   
@@ -160,7 +160,7 @@ coordinates.
 
   * **Code:** 200 <br />
     **Content:** an array `renderData` containing data tuples inside the requested window. The definition of *inside a window* may be different when different algorithms (centroid/bounding box) are used. 
-    
+  
 * **Error Response:**
   * **Code:** 405 BAD METHOD <br />
   
